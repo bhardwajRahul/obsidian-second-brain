@@ -16,6 +16,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from _bash import BASH
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -40,7 +41,7 @@ def test_validate_hook_matches_windows_backslash_paths(tmp_path):
 
     def run(file_path, vault):
         return subprocess.run(
-            ["bash", str(hook)],
+            [BASH, str(hook)],
             input=json.dumps({"tool_name": "Write", "tool_input": {"file_path": file_path}}),
             env=dict(os.environ, OBSIDIAN_VAULT_PATH=vault),
             capture_output=True,
@@ -143,7 +144,7 @@ def test_validate_hook_env_fallback_uses_the_platform_home(tmp_path):
         env["HOME"] = str(platform_home)
         env.pop("USERPROFILE", None)
     r = subprocess.run(
-        ["bash", str(hook)],
+        [BASH, str(hook)],
         input=json.dumps({"tool_name": "Write", "tool_input": {"file_path": str(bad)}}),
         env=env,
         capture_output=True,
@@ -163,7 +164,7 @@ def test_validate_hook_env_fallback_uses_the_platform_home(tmp_path):
         (broken / "cygpath").write_text("#!/usr/bin/env bash\nexit 1\n", encoding="utf-8")
         env["PATH"] = f"{broken}{os.pathsep}{env['PATH']}"
         r = subprocess.run(
-            ["bash", str(hook)],
+            [BASH, str(hook)],
             input=json.dumps({"tool_name": "Write", "tool_input": {"file_path": str(bad)}}),
             env=env,
             capture_output=True,
@@ -181,7 +182,7 @@ def test_validate_hook_env_fallback_uses_the_platform_home(tmp_path):
     elsewhere.write_bytes(f"OBSIDIAN_VAULT_PATH={vault}\r\n".encode("utf-8"))
     env["OBSIDIAN_ENV_FILE"] = str(elsewhere)
     r = subprocess.run(
-        ["bash", str(hook)],
+        [BASH, str(hook)],
         input=json.dumps({"tool_name": "Write", "tool_input": {"file_path": str(bad)}}),
         env=env,
         capture_output=True,
@@ -212,7 +213,7 @@ def test_validate_hook_accepts_crlf_notes(tmp_path):
 
     def run(f):
         return subprocess.run(
-            ["bash", str(hook)],
+            [BASH, str(hook)],
             input=json.dumps({"tool_name": "Write", "tool_input": {"file_path": str(f)}}),
             env=dict(os.environ, OBSIDIAN_VAULT_PATH=str(vault)),
             capture_output=True,
@@ -255,7 +256,7 @@ def test_validate_hook_leaves_posix_backslash_paths_alone(tmp_path):
     bad = odd / "bad.md"
     bad.write_text("# no frontmatter\n", encoding="utf-8")
     r = subprocess.run(
-        ["bash", str(hook)],
+        [BASH, str(hook)],
         input=json.dumps({"tool_name": "Write", "tool_input": {"file_path": str(bad)}}),
         env=dict(os.environ, OBSIDIAN_VAULT_PATH=str(vault)),
         capture_output=True,
