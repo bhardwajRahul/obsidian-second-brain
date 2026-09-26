@@ -36,7 +36,7 @@ import sys as _sys
 from pathlib import Path as _Path
 
 _sys.path.insert(0, str(_Path(__file__).resolve().parent))
-from vault_scan import BASE_EXCLUDE_DIRS, STATS_ONLY_EXCLUDES  # noqa: E402
+from vault_scan import BASE_EXCLUDE_DIRS, STATS_ONLY_EXCLUDES, is_hidden  # noqa: E402
 
 # Base policy plus raw/ and references/, which are real vault content but not
 # user notes for the purpose of counting.
@@ -81,6 +81,8 @@ def walk_vault(vault: Path) -> tuple[list[tuple[Path, dict[str, Any]]], int]:
     skipped = 0
     for md in vault.rglob("*.md"):
         rel_parts = md.relative_to(vault).parts
+        if is_hidden(rel_parts):
+            continue
         if any(part.lower() in EXCLUDED_FOLDERS for part in rel_parts):
             continue
         if md.name in {"_CLAUDE.md", "log.md", "index.md", "MEMORY.md"}:
