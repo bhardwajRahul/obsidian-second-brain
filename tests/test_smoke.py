@@ -1545,3 +1545,26 @@ def test_validate_hook_skips_claude_dir(tmp_path):
     checked = run(note)
     assert checked.returncode == 0, checked.stderr
     assert "AI-first" in checked.stdout or "warning" in checked.stdout.lower(), checked.stdout
+
+
+def test_validate_hook_skips_claude_memory_dir(tmp_path):
+    """#311: with autoMemoryDirectory inside the vault, Claude Code writes its
+    auto-memory files to .claude-memory/. They follow Claude Code's schema
+    (name, description, metadata.type), not the vault's, so every write came back
+    as decision: block. The #249 skip needs the literal /.claude/ segment and
+    never matched .claude-memory/."""
+    hook = REPO_ROOT / "hooks/validate-ai-first.sh"
+    mem = tmp_path / ".claude-memory" / "some-memory.md"
+    mem.parent.mkdir(parents=True)
+    mem.write_text(
+        "---\nname: some-memory\ndescription: a memory\nmetadata:\n  type: feedback\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+    r = subprocess.run(
+        [BASH, str(hook)],
+        input=json.dumps({"tool_name": "Write", "tool_input": {"file_path": str(mem)}}),
+        env=dict(os.environ, OBSIDIAN_VAULT_PATH=str(tmp_path)),
+        capture_output=True, text=True,
+    )
+    assert r.returncode == 0, r.stderr
+    assert not r.stdout.strip(), r.stdout
